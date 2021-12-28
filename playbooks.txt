@@ -1,0 +1,180 @@
+---
+- name: creating files and directories
+  hosts: all
+  gather_facts: no
+  become: true
+
+  tasks:
+  - name: create file
+    file:
+     path: /opt/testfile
+     state: touch
+     mode: 0755
+     owner: ansadmin
+
+  - name: create directory
+    file:
+     path: /opt/directorytest
+     state: directory
+     mode: 0755
+     owner: ansadmin
+
+-------------------
+
+---
+- name: delete files and directories
+  hosts: all
+  gather_facts: no
+  become: true
+
+  tasks:
+  - name: create file
+    file:
+     path: /opt/testfile
+     state: absent
+     
+
+  - name: delete directory
+    file:
+     path: /opt/directorytest
+     state: absent
+     
+---------------------------------------------------
+
+---
+- name: install multiple packages
+  hosts: all
+  gather_facts: no
+  become: true
+
+  tasks:
+  - name: installing packages
+    yum:
+      name:  "{{item}}"
+      state: installed
+
+    with_items:
+      - git
+      - wget
+      - tree
+      - make
+      - telnet
+      - gzip
+
+
+------------------------
+
+---
+- name: install multiple packages
+  hosts: all
+  gather_facts: no
+  become: true
+
+  tasks:
+  - name: installing packages
+    yum:
+      name: ['get', 'wget', 'tree', 'telnet', 'gzip']
+      state: absent
+
+----------------------------------------------------------
+
+---
+- name: install multiple packages
+  hosts: all
+  gather_facts: yes
+  become: true
+
+tasks:
+  - name: uninstalling packages
+    yum:
+      name: ['get',  'make']
+      state: removed
+
+tasks:
+  - name: installing packages
+    yum:
+      name: ['tree', 'telnet']
+      state: installed
+
+-----------------------------------------------------------------------------
+---
+- name: install multiple packages
+  hosts: all
+  gather_facts: yes
+  become: true
+
+  tasks:
+  - name: packages
+    yum:
+     name: "{{item.pkg}}"
+     state: "{{item.setup}}"
+    loop:
+     - { pkg: 'git', setup: 'installed' }
+     - { pkg: 'make', setup: 'latest' }
+     - { pkg: 'wget', setup: 'removedd' }
+     - { pkg: 'tree', setup: 'absent' }
+
+
+-----------------------------------------------------------------------------
+#when condition
+---
+- name: install  packages
+  hosts: all
+  gather_facts: yes
+  become: true
+
+  tasks:
+  - name: Install httpd  packages redhat
+    yum:
+      name: httpd
+      state: installed
+    when: ansible_os_family == "RedHat"
+
+  tasks:
+  - name: start httpd  packages
+    service:
+      name: httpd
+      state: started
+    when: ansible_os_family == "RedHat"
+
+  tasks:
+  - name: Install httpd  packages  ubuntu
+    apt:
+      name: apache2
+      state: present
+    when: ansible_os_family == "Debian"
+
+  tasks:
+  - name: start httpd  packages
+    service:
+      name: httpd
+      state: started
+    when: ansible_os_family == "Debian"
+
+-------------------------------------------------------------------------------------------------
+Notify $ handlers
+
+---
+- name: install  packages
+  hosts: all
+  gather_facts: yes
+  become: true
+
+  tasks:
+  - name: Install httpd  packages redhat
+    yum:
+      name: httpd
+      state: installed
+    notify: start httpd services
+
+
+  handlers:
+  - name: start httpd  services
+    service:
+      name: httpd
+      state: started
+
+
+-----------------------------------
+sudo mv  notify_handlers notify_handlers.yml
+ansible-playbook -i /home/ansadmin/playbooks/hosts notify_handlers.yml --limit rhel --check
